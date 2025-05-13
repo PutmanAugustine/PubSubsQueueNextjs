@@ -40,6 +40,10 @@ async function processSubmission(submission: string) {
   }
 }
 
+async function processFiveSubmissions(submission) {
+  await Promise.all([processSubmission(submission[0].element), processSubmission(submission[1].element), processSubmission(submission[2].element), processSubmission(submission[3].element), processSubmission(submission[4].element)]);
+}
+
 async function startWorker() {
   console.log("worker started");
   try {
@@ -49,13 +53,17 @@ async function startWorker() {
     console.error("Error connecting to Redis", error);
   }
 
-  while (true) {
+  while (true) { //make it work in batches
     try {
-      const submission = await redisClient.brPop("submissions", 0);
+      const submission = [null, null, null, null, null];
+      for (let i = 0; i < 5; ++i) {
+        submission[i] = await redisClient.brPop("submissions", 0);
+      }
       console.log("Received submission", submission);
       //send it to pub sub channel
       if (submission) {
-        await processSubmission(submission.element);
+	await processFiveSubmissions(submission);
+        //await processSubmission(submission.element);
       }
     } catch (error) {
       console.error("Error processing submission", error);
