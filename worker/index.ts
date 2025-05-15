@@ -38,10 +38,21 @@ async function processSubmission(submission: string) {
   } catch (error) {
     console.error("Error publishing to Redis", error);
   }
+
+  // Add to database here: advantage is that it allows us to go as far as possible before stopping if an error happens
 }
 
 async function processFiveSubmissions(submission) {
-  await Promise.all([processSubmission(submission[0].element), processSubmission(submission[1].element), processSubmission(submission[2].element), processSubmission(submission[3].element), processSubmission(submission[4].element)]);
+  try {
+    let submissionThreads = []
+    for (let i = 0; i < submission.length; ++i) {
+      submissionThreads.push(processSubmission(submission[i].element));
+    }
+    await Promise.all(submissionThreads);
+  } catch (error) {
+    console.error("Error processing batch", error);
+    return;
+  }
 }
 
 async function startWorker() {
